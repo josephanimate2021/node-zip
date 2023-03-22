@@ -4,7 +4,7 @@ This projects intends to create/read [PKZIP](http://en.wikipedia.org/wiki/PKZIP)
 
 ## Install
 
-    npm install kyriosli/node-zip
+    npm install josephanimate2021/node-zip
 
 ## Usage
 
