@@ -4,20 +4,7 @@ var zlib = require('zlib'), stream = require('stream');
 
 exports.ZipFile = ZipFile;
 exports.ZipEntry = ZipEntry;
-
-exports.create = function (map) {
-    var ret = new ZipFile();
-    if (map && typeof map === 'object') {
-        for (var keys = Object.keys(map), i = 0, L = keys.length; i < L; i++) {
-            ret.add(keys[i], map[keys[i]]);
-        }
-    }
-    return ret
-};
-
-
-function ZipFile() {
-}
+function ZipFile() {}
 
 /**
  * Adds zip entry
@@ -335,37 +322,6 @@ function zipFile(fileLength, read, readAll) {
     }
     return ret;
 }
-
-
-var fs = require('fs');
-/**
- *
- * @param file a filename, or a fd, or a buffer
- * @returns {*}
- */
-exports.unzip = function (file) {
-    if (typeof file === 'string') {
-        file = fs.openSync(file, 'r');
-    }
-    if (typeof file === 'number') {
-        return zipFile(fs.fstatSync(file).size, function (offset, length) {
-            var buf = new Buffer(length);
-            for (var red = 0; red < length;) {
-                red += fs.readSync(file, buf, red, length - red, offset + red);
-            }
-            return buf;
-        }, false)._closeHook(function () {
-            fs.closeSync(file);
-        });
-    } else if (Buffer.isBuffer(file)) {
-        return zipFile(file.length, function (offset, length) {
-            return file.slice(offset, offset + length)
-        }, true);
-    } else {
-        throw new Error('Expected file path, fd, or a buffer');
-    }
-};
-
 var crc_table = new Uint32Array(256);
 
 for (var i = 0; i < 256; i++) {
@@ -387,3 +343,34 @@ function crc32(arr) {
     }
     return ~crc;
 }
+var fs = require('fs');
+module.exports = {
+    create(map) {
+        var ret = new ZipFile();
+        if (map && typeof map === 'object') {
+            for (var keys = Object.keys(map), i = 0, L = keys.length; i < L; i++) ret.add(keys[i], map[keys[i]]);
+        }
+        return ret
+    },
+    /**
+     *
+     * @param file a filename, or a fd, or a buffer
+     * @returns {*}
+     */
+    unzip(file) {
+        if (typeof file === 'string') file = fs.openSync(file, 'r');
+        if (typeof file === 'number') {
+            return zipFile(fs.fstatSync(file).size, function (offset, length) {
+                var buf = new Buffer(length);
+                for (var red = 0; red < length;) red += fs.readSync(file, buf, red, length - red, offset + red);
+                return buf;
+            }, false)._closeHook(function () {
+                fs.closeSync(file);
+            });
+        } else if (Buffer.isBuffer(file)) {
+            return zipFile(file.length, function (offset, length) {
+                return file.slice(offset, offset + length)
+            }, true);
+        } else throw new Error('Expected file path, fd, or a buffer');
+    }
+};
